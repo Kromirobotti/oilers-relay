@@ -1,0 +1,6 @@
+{
+  "name": "oilers-torneopal-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pieni Vercel-valityspalvelin Torneopal-rajapinnalle (Esport Oilers -tulospalvelu)."
+}
