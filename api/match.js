@@ -1,3 +1,7 @@
+// Yksittaisen ottelun tiedot (maalintekijat + maalivahdit) Torneopal-rajapinnasta.
+// Sama syy taalla olemiselle kuin matches.js:lla: Torneopalin oma
+// Cloudflare-suojaus estaa Cloudflare Workerista tulevat pyynnot.
+
 const API_BASE = "https://salibandy-api.torneopal.net/taso/rest";
 const API_KEY = "zsn3anknxzcfzc23k53jqdcd4pymutsf";
 
@@ -41,11 +45,23 @@ module.exports = async (req, res) => {
           note: (g.description || "").trim() || null,
         }))
       : [];
+    const goalkeepers = Array.isArray(m.lineups)
+      ? m.lineups
+          .filter((p) => p.position === "mv" || p.position_en === "GK")
+          .map((p) => ({
+            team_id: p.team_id,
+            player_name: p.player_name,
+            shirt_number: p.shirt_number,
+            saves: p.saves,
+            conceded: p.conceded,
+          }))
+      : [];
     res.status(200).json({
       team_A_id: m.team_A_id,
       team_B_id: m.team_B_id,
       period_lengths_sec: m.period_lengths_sec || null,
       goals,
+      goalkeepers,
     });
   } catch (err) {
     res.status(502).json({ error: String(err && err.message ? err.message : err) });
