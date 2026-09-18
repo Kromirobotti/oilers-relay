@@ -13,40 +13,21 @@ const UPSTREAM_HEADERS = {
 module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
-  const { match_id } = req.query || {};
-  if (!match_id) {
-    res.status(400).json({ error: "missing match_id" });
+  const { category_id, competition_id, team_id } = req.query || {};
+  if (!category_id || !competition_id || !team_id) {
+    res.status(400).json({ error: "missing category_id/competition_id/team_id" });
     return;
   }
 
-  const upstreamUrl = `${API_BASE}/getMatch?match_id=${encodeURIComponent(match_id)}`;
+  const params = new URLSearchParams({ category_id, competition_id, team_id });
+  const upstreamUrl = `${API_BASE}/getMatches?${params.toString()}`;
 
   try {
     const upstreamResp = await fetch(upstreamUrl, { headers: UPSTREAM_HEADERS });
-    if (!upstreamResp.ok) {
-      const bodySnippet = (await upstreamResp.text()).slice(0, 300);
-      res.status(upstreamResp.status).json({ error: `upstream ${upstreamResp.status}`, bodySnippet });
-      return;
-    }
-    const data = await upstreamResp.json();
-    const m = (data && data.match) || {};
-    const goals = Array.isArray(m.goals)
-      ? m.goals.map((g) => ({
-          team_id: g.team_id,
-          player_name: g.player_name,
-          shirt_number: g.player_shirt_number,
-          time: g.time,
-          score_A: g.score_A,
-          score_B: g.score_B,
-          note: (g.description || "").trim() || null,
-        }))
-      : [];
-    res.status(200).json({
-      team_A_id: m.team_A_id,
-      team_B_id: m.team_B_id,
-      period_lengths_sec: m.period_lengths_sec || null,
-      goals,
-    });
+    const text = await upstreamResp.text();
+    res.status(upstreamResp.status);
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.send(text);
   } catch (err) {
     res.status(502).json({ error: String(err && err.message ? err.message : err) });
   }
